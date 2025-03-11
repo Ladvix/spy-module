@@ -1,3 +1,5 @@
+import os
+import time
 from pyrogram import Client, filters, enums
 from string import Template
 from utils import dirs, json_helper
@@ -53,14 +55,19 @@ def launch(bot, module_name):
 
         messages = []
 
-        try:
-            for msg in bot.app.get_chat_history(message.chat.id):
-                if username == msg.from_user.username:
+        for msg in bot.app.get_chat_history(message.chat.id):
+            if len(messages) >= 100:
+                bot.app.forward_messages(chat.id, message.chat.id, messages)
+                messages = []
+
+                time.sleep(1)
+            
+            if msg.from_user != None and username == msg.from_user.username:
+                if msg.id != None:
                     messages.append(msg.id)
 
+        if len(messages) > 0:
             bot.app.forward_messages(chat.id, message.chat.id, messages)
-        except:
-            pass
 
         with open(dirs.MODULES_PATH + module_name + '/templates/success.html', encoding='utf-8') as f:
             message.edit(f.read())
