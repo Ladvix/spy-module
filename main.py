@@ -45,29 +45,48 @@ def launch(bot, module_name):
 
     @bot.app.on_message(filters.command('search_messages', prefixes='.') & filters.me)
     def message_handler(client, message):
-        data = message.text.split(' ', maxsplit=1)
+        data = message.text.split(' ', maxsplit=2)
         username = data[1].replace('@', '')
-
-        chat = bot.app.create_supergroup(f'Сообщения от @{username} в чате ' + message.chat.title, '')
+        method = data[2]
 
         with open(dirs.MODULES_PATH + module_name + '/templates/loading.html', encoding='utf-8') as f:
             message.edit(f.read())
 
-        messages = []
+        if method == 'into_group':
+            chat = bot.app.create_supergroup(f'Сообщения от @{username} в чате ' + message.chat.title, '')
 
-        for msg in bot.app.get_chat_history(message.chat.id):
-            if len(messages) >= 100:
+            messages = []
+
+            for msg in bot.app.get_chat_history(message.chat.id):
+                if len(messages) >= 100:
+                    bot.app.forward_messages(chat.id, message.chat.id, messages)
+                    messages = []
+
+                    time.sleep(1)
+                
+                if msg.from_user != None and username == msg.from_user.username:
+                    if msg.id != None:
+                        messages.append(msg.id)
+
+            if len(messages) > 0:
                 bot.app.forward_messages(chat.id, message.chat.id, messages)
-                messages = []
 
-                time.sleep(1)
+        elif method == 'into_file':
+            messages = ''
+
+            for msg in bot.app.get_chat_history(message.chat.id):
+                if msg.from_user != None and username == msg.from_user.username:
+                    if msg.id != None:
+                        messages += '\n'
+                        messages += f'>> {msg.date} ' + msg.text
+                        messages += '\n'
+
+            with open(dirs.MODULES_PATH + module_name + '/messages.txt', 'w', encoding='utf-8') as f:
+                f.write(messages)
+
+            bot.app.send_document('me', dirs.MODULES_PATH + module_name + '/messages.txt')
             
-            if msg.from_user != None and username == msg.from_user.username:
-                if msg.id != None:
-                    messages.append(msg.id)
-
-        if len(messages) > 0:
-            bot.app.forward_messages(chat.id, message.chat.id, messages)
+            os.remove(dirs.MODULES_PATH + module_name + '/messages.txt')
 
         with open(dirs.MODULES_PATH + module_name + '/templates/success.html', encoding='utf-8') as f:
             message.edit(f.read())
