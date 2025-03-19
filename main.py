@@ -1,5 +1,6 @@
 import os
 import time
+import random
 from pyrogram import Client, filters, enums
 from string import Template
 from utils import dirs, json_helper
@@ -7,7 +8,7 @@ from utils import dirs, json_helper
 def launch(bot, module_name):
     config = json_helper.read(dirs.MODULES_PATH + module_name + '/config.json')
 
-    @bot.app.on_message(group=1)
+    @bot.app.on_message(group=random.randint(1, 9999))
     def message_handler(client, message):
         try:
             for i in config['chats']:
@@ -76,7 +77,7 @@ def launch(bot, module_name):
 
             for msg in bot.app.get_chat_history(message.chat.id):
                 if msg.from_user != None and username == msg.from_user.username:
-                    if msg.id != None:
+                    if msg.id != None and msg.text != None:
                         messages += '\n'
                         messages += f'>> {msg.date} ' + msg.text
                         messages += '\n'
